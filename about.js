@@ -1,256 +1,61 @@
-import wixData from 'wix-data';
+import wixAnimations from 'wix-animations';
 
-$w.onReady(function () {
+let impactAnimated = false;
 
-    let selectedCategory = null;
-    let selectedCounty = null;
-    let selectedStatus = null;
-    let searchText = "";
+// impact numbers section "count-up" animation
+function countUp(element, target, duration = 1500) {
+    const startTime = Date.now();
 
-    const defaultColor = "#FFFFFF";
-    const selectedColor = "#F5F7FA";
+    const interval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
 
-    function applyFilters() {
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
 
-        let filter = wixData.filter();
+        const current = Math.floor(target * easedProgress);
 
-        if (selectedCategory) {
-            filter = filter.hasSome("category", [selectedCategory]);
+        element.text = `${current}+`;
+
+        if (progress >= 1) {
+            clearInterval(interval);
+            element.text = `${target}+`;
+
+            // finishing pop
+            wixAnimations.timeline()
+                .add(element, {
+                    duration: 150,
+                    scale: 1.08,
+                    easing: "easeOut"
+                })
+                .add(element, {
+                    duration: 150,
+                    scale: 1,
+                    easing: "easeInOut"
+                })
+                .play();
         }
-
-        if (selectedCounty) {
-            filter = filter.hasSome("county", [selectedCounty]);
-        }
-
-        if (searchText) {
-            filter = filter.contains("title", searchText);
-        }
-
-        if (selectedStatus) {
-            filter = filter.hasSome("status", [selectedStatus]);
-        }
-
-        $w("#dataset1").setFilter(filter)
-            .then(() => {
-                updateResultsCount();
-            });
-
-    }
-
-    function updateResultsCount() {
-
-    $w("#dataset1").getItems(0, 1000)
-        .then((result) => {
-
-            const count = result.items.length;
-
-            if (count === 1) {
-                $w("#resultsCountText").text = "Showing 1 resource";
-            } else {
-                $w("#resultsCountText").text = `Showing ${count} resources`;
-            }
-
-        });
-
+    }, 16);
 }
 
-    function resetPills() {
+$w.onReady(() => {
 
-        const pills = [
-            "#allCategoryPill",
-            "#utilityPill",
-            "#housingPill",
-            "#foodPill",
-            "#educationPill",
+    // initial values
+    $w("#number1").text = "0+";
+    $w("#number2").text = "0+";
+    $w("#number3").text = "0+";
 
-            "#allCountyPill",
-            "#gwinnettPill",
-            "#dekalbPill",
-            "#fultonPill",
-            "#cobbPill",
+    // impact section entering the viewport
+    $w("#impactSection").onViewportEnter(() => {
 
-            "#allStatusPill",
-            "#openIntakePill",
-            "#limitedPill"
-        ];
-
-        pills.forEach((pill) => {
-            $w(pill).style.backgroundColor = defaultColor;
-        });
-
-    }
-
-    function selectPill(pillID, group) {
-
-        if (group === "category") {
-
-            [
-                "#allCategoryPill",
-                "#utilityPill",
-                "#housingPill",
-                "#foodPill",
-                "#educationPill"
-
-            ].forEach((pill) => {
-                $w(pill).style.backgroundColor = defaultColor;
-            });
-
+        // prevent the animation from running again
+        if (impactAnimated) {
+            return;
         }
 
-        if (group === "county") {
+        impactAnimated = true;
 
-            [
-                "#allCountyPill",
-                "#gwinnettPill",
-                "#dekalbPill",
-                "#fultonPill",
-                "#cobbPill"
-
-            ].forEach((pill) => {
-                $w(pill).style.backgroundColor = defaultColor;
-            });
-
-        }
-
-        if (group === "status") {
-
-            [
-                "#allStatusPill",
-                "#openIntakePill",
-                "#limitedPill"
-
-            ].forEach((pill) => {
-                $w(pill).style.backgroundColor = defaultColor;
-            });
-
-        }
-
-        $w(pillID).style.backgroundColor = selectedColor;
-
-    }
-
-    $w("#searchInput").onInput(() => {
-
-        searchText = $w("#searchInput").value.trim();
-
-        applyFilters();
-
+        countUp($w("#number1"), 4);
+        countUp($w("#number2"), 2);
+        countUp($w("#number3"), 30);
     });
-
-    $w("#allCategoryPill").onClick(() => {
-        selectedCategory = null;
-        selectPill("#allCategoryPill", "category");
-        applyFilters();
-    });
-
-    $w("#utilityPill").onClick(() => {
-        selectedCategory = "Utility";
-        selectPill("#utilityPill", "category");
-        applyFilters();
-    });
-
-    $w("#housingPill").onClick(() => {
-        selectedCategory = "Housing";
-        selectPill("#housingPill", "category");
-        applyFilters();
-    });
-
-    $w("#foodPill").onClick(() => {
-        selectedCategory = "Food";
-        selectPill("#foodPill", "category");
-        applyFilters();
-    });
-
-    $w("#educationPill").onClick(() => {
-        selectedCategory = "Education";
-        selectPill("#educationPill", "category");
-        applyFilters();
-    });
-
-    $w("#allCountyPill").onClick(() => {
-        selectedCounty = null;
-        selectPill("#allCountyPill", "county");
-        applyFilters();
-    });
-
-    $w("#gwinnettPill").onClick(() => {
-        selectedCounty = "Gwinnett";
-        selectPill("#gwinnettPill", "county");
-        applyFilters();
-    });
-
-    $w("#dekalbPill").onClick(() => {
-        selectedCounty = "DeKalb";
-        selectPill("#dekalbPill", "county");
-        applyFilters();
-    });
-
-    $w("#fultonPill").onClick(() => {
-        selectedCounty = "Fulton";
-        selectPill("#fultonPill", "county");
-        applyFilters();
-    });
-
-    $w("#cobbPill").onClick(() => {
-        selectedCounty = "Cobb";
-        selectPill("#cobbPill", "county");
-        applyFilters();
-    });
-
-    $w("#allStatusPill").onClick(() => {
-        selectedStatus = null;
-        selectPill("#allStatusPill", "status");
-        applyFilters();
-    });
-
-    $w("#openIntakePill").onClick(() => {
-        selectedStatus = "Open Intake";
-        selectPill("#openIntakePill", "status");
-        applyFilters();
-    });
-
-    $w("#limitedPill").onClick(() => {
-        selectedStatus = "Limited";
-        selectPill("#limitedPill", "status");
-        applyFilters();
-    });
-
-    $w("#clearFiltersButton").onClick(() => {
-
-        selectedCategory = null;
-        selectedCounty = null;
-        selectedStatus = null;
-        searchText = "";
-
-        $w("#searchInput").value = "";
-
-        resetPills();
-
-        applyFilters();
-
-    });
-
-    $w("#repeater1").onItemReady(($item, itemData) => {
-
-        $item("#greenPill").hide();
-        $item("#yellowPill").hide();
-
-        if (itemData.status && itemData.status.includes("Open Intake")) {
-
-            $item("#greenPill").show();
-
-        } else {
-
-            $item("#yellowPill").show();
-
-        }
-
-    });
-
-    $w("#dataset1").onReady(() => {
-
-        updateResultsCount();
-
-    });
-
 });
